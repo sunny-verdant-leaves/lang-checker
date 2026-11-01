@@ -8,6 +8,6 @@ public class LangChecker {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static void init() {
-        LOGGER.info("Lang Checker Common 模块环境测试成功！");
+        LOGGER.info("Lang Checker 核心逻辑初始化！");
     }
 }

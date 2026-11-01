@@ -5,3 +5,9 @@ architectury {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 }
+
+loom {
+    mixin {
+        defaultRefmapName = "lang_checker.refmap.json"
+    }
+}

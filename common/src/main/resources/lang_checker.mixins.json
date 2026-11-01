@@ -4,7 +4,9 @@
   "package": "com.github.verdant_leaves.lang_checker.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [],
-  "client": [],
+  "client": [
+    "TranslationStorageMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
