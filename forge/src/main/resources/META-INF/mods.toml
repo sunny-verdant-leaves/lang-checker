@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+#issueTrackerURL = ""
+
+[[mods]]
+modId = "lang_checker"
+version = "${version}"
+displayName = "Lang Checker"
+authors = "Sunny Verdant Leaves"
+description = '''
+自动捕获并导出缺失的本地化条目，辅助汉化工作。
+'''
+#logoFile = ""
+
+[[dependencies.lang_checker]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.lang_checker]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "CLIENT"

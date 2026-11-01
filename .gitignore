@@ -1,0 +1,28 @@
+# ── Gradle ──
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# ── IDE ──
+bin/
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# ── Minecraft 运行目录 ──
+run/
+logs/
+crash-reports/
+
+# ── 系统 ──
+.DS_Store
+Thumbs.db
+
+# ── Java ──
+*.class
+*.log
+hs_err_pid*
