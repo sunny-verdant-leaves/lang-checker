@@ -27,23 +27,27 @@ public class TranslationCollector {
         availableKeys.clear();
         Minecraft client = Minecraft.getInstance();
         String lang = client.options.languageCode;
-        ResourceLocation loc = new ResourceLocation("minecraft", "lang/" + lang + ".json");
         
         try {
-            List<Resource> resources = client.getResourceManager().getResourceStack(loc);
-            for (Resource res : resources) {
-                try (InputStreamReader reader = new InputStreamReader(res.open(), StandardCharsets.UTF_8)) {
+            // 魔法在此：读取所有命名空间下 lang/zh_cn.json 的文件
+            Map<ResourceLocation, Resource> resources = client.getResourceManager().listResources(
+                    "lang", 
+                    path -> path.getPath().endsWith(lang + ".json")
+            );
+            
+            for (Resource resource : resources.values()) {
+                try (InputStreamReader reader = new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
                     Map<?, ?> map = GSON.fromJson(reader, Map.class);
                     if (map != null) {
                         for (Object k : map.keySet()) {
                             availableKeys.add(k.toString());
                         }
                     }
-                }
+                } catch (Exception ignored) {}
             }
             LangChecker.LOGGER.info("Loaded {} local keys for language {}", availableKeys.size(), lang);
-        } catch (IOException e) {
-            LangChecker.LOGGER.error("Failed to read language file", e);
+        } catch (Exception e) {
+            LangChecker.LOGGER.error("Failed to read language files", e);
         }
     }
 
