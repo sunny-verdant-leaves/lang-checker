@@ -9,7 +9,7 @@ version = "${version}"
 displayName = "Lang Checker"
 authors = "Sunny Verdant Leaves"
 description = '''
-自动捕获并导出缺失的本地化条目，辅助汉化工作。
+自动捕获并导出缺失的本地化条目，辅助翻译工作。
 '''
 #logoFile = ""
 
