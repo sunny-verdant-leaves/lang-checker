@@ -1,7 +1,11 @@
 {
-    "commands.lang_checker.dump.success": "§a[Lang Checker] Successfully exported %s missing translations (Mode: %s).",
-    "commands.lang_checker.dump.empty": "§e[Lang Checker] No missing translations found.",
-    "commands.lang_checker.dump.fail": "§c[Lang Checker] Export failed, check logs.",
-    "commands.lang_checker.dump.click": " §n[Click to open folder]",
-    "commands.lang_checker.dump.hover": "Open the output directory"
+  "commands.lang_checker.dump.success": "§a[Lang Checker] Successfully exported %s missing translations. (Mode: %s)",
+  "commands.lang_checker.dump.empty": "§e[Lang Checker] No missing translations found.",
+  "commands.lang_checker.dump.fail": "§c[Lang Checker] Export failed, check logs.",
+  "commands.lang_checker.dump.path": "Exported to: %s",
+  "commands.lang_checker.dump.path_hover": "§aClick to open folder§r",
+  
+  "commands.lang_checker.mode.mix": "Mix",
+  "commands.lang_checker.mode.all": "All",
+  "commands.lang_checker.mode.custom": "Custom (%s)"
 }

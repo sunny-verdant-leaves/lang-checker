@@ -3,12 +3,13 @@ package com.github.verdant_leaves.lang_checker.forge;
 import com.github.verdant_leaves.lang_checker.LangChecker;
 import com.github.verdant_leaves.lang_checker.TranslationCollector;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
@@ -41,25 +42,30 @@ public class LangCheckerForge {
 
     private int executeDump(CommandSourceStack source, String mode) {
         int count = TranslationCollector.scanAndExport(mode);
+        
         if (count > 0) {
-            source.sendSuccess(() -> Component.translatable("commands.lang_checker.dump.success", count, mode), false);
-            
-            // 获取游戏根目录，拼出 lang_checker 文件夹的绝对路径
-            String path = source.getServer().getServerDirectory().toPath().resolve("lang_checker").toAbsolutePath().toString();
-            
-            // 如果存在版本隔离，可以取客户端目录
-            try {
-                path = net.minecraft.client.Minecraft.getInstance().gameDirectory.toPath().resolve("lang_checker").toAbsolutePath().toString();
-            } catch (Exception ignored) {}
+            String modeStr;
+            if (mode.equalsIgnoreCase("mix") || mode.equalsIgnoreCase("default")) {
+                modeStr = Component.translatable("commands.lang_checker.mode.mix").getString();
+            } else if (mode.equalsIgnoreCase("all")) {
+                modeStr = Component.translatable("commands.lang_checker.mode.all").getString();
+            } else {
+                modeStr = Component.translatable("commands.lang_checker.mode.custom", mode).getString();
+            }
 
-            final String finalPath = path;
-            Component clickText = Component.translatable("commands.lang_checker.dump.click")
-                .withStyle(style -> style
-                    .withColor(ChatFormatting.GREEN)
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, finalPath))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("commands.lang_checker.dump.hover")))
-                );
-            source.sendSuccess(() -> clickText, false);
+            source.sendSuccess(() -> Component.translatable("commands.lang_checker.dump.success", count, modeStr), false);
+
+            String rawPath = Minecraft.getInstance().gameDirectory.toPath().resolve("lang_checker").toAbsolutePath().toString();
+            String safePath = rawPath.replace("\\", "/");
+            
+            MutableComponent line2 = Component.translatable("commands.lang_checker.dump.path", rawPath)
+                    .withStyle(style -> style
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, safePath))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("commands.lang_checker.dump.path_hover")))
+                    );
+
+            source.sendSuccess(() -> line2, false);
+
         } else if (count == 0) {
             source.sendSuccess(() -> Component.translatable("commands.lang_checker.dump.empty"), false);
         } else {

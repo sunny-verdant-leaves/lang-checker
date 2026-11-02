@@ -8,10 +8,10 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 
 public class LangCheckerFabricClient implements ClientModInitializer {
     @Override
@@ -38,17 +38,32 @@ public class LangCheckerFabricClient implements ClientModInitializer {
 
     private int executeDump(FabricClientCommandSource source, String mode) {
         int count = TranslationCollector.scanAndExport(mode);
+        
         if (count > 0) {
-            source.sendFeedback(Component.translatable("commands.lang_checker.dump.success", count, mode));
-            // 生成可点击打开的目录链接
-            String path = source.getClient().gameDirectory.toPath().resolve("lang_checker").toAbsolutePath().toString();
-            Component clickText = Component.translatable("commands.lang_checker.dump.click")
-                .withStyle(style -> style
-                    .withColor(ChatFormatting.GREEN)
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, path))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("commands.lang_checker.dump.hover")))
-                );
-            source.sendFeedback(clickText);
+            String modeStr;
+            if (mode.equalsIgnoreCase("mix") || mode.equalsIgnoreCase("default")) {
+                modeStr = Component.translatable("commands.lang_checker.mode.mix").getString();
+            } else if (mode.equalsIgnoreCase("all")) {
+                modeStr = Component.translatable("commands.lang_checker.mode.all").getString();
+            } else {
+                modeStr = Component.translatable("commands.lang_checker.mode.custom", mode).getString();
+            }
+
+            source.sendFeedback(Component.translatable("commands.lang_checker.dump.success", count, modeStr));
+
+            String rawPath = source.getClient().gameDirectory.toPath().resolve("lang_checker").toAbsolutePath().toString();
+            // 将 \ 转换为 / 防止点击失效
+            String safePath = rawPath.replace("\\", "/");
+            
+            // 显示具体的 rawPath，悬停显示固定翻译
+            MutableComponent line2 = Component.translatable("commands.lang_checker.dump.path", rawPath)
+                    .withStyle(style -> style
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, safePath))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("commands.lang_checker.dump.path_hover")))
+                    );
+            
+            source.sendFeedback(line2);
+
         } else if (count == 0) {
             source.sendFeedback(Component.translatable("commands.lang_checker.dump.empty"));
         } else {
