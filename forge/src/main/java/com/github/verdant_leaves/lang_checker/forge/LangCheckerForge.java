@@ -2,6 +2,8 @@ package com.github.verdant_leaves.lang_checker.forge;
 
 import com.github.verdant_leaves.lang_checker.LangChecker;
 import com.github.verdant_leaves.lang_checker.TranslationCollector;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
@@ -17,29 +19,37 @@ public class LangCheckerForge {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    // 命令注册
     @SubscribeEvent
     public void onRegisterCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("langchecker")
             .then(Commands.literal("dump")
-                .executes(context -> {
-                    int count = TranslationCollector.scanAndExport();
-                    if (count > 0) {
-                        context.getSource().sendSuccess(() -> Component.literal("§a[Lang Checker] 导出成功！共捕获 " + count + " 条缺失翻译。"), false);
-                    } else if (count == 0) {
-                        context.getSource().sendSuccess(() -> Component.literal("§e[Lang Checker] 当前语言没有缺失翻译。"), false);
-                    } else {
-                        context.getSource().sendSuccess(() -> Component.literal("§c[Lang Checker] 导出失败，请查看日志！"), false);
-                    }
-                    return 1;
-                })
+                .executes(ctx -> executeDump(ctx.getSource(), "mix"))
+                .then(Commands.literal("default")
+                    .executes(ctx -> executeDump(ctx.getSource(), "mix")))
+                .then(Commands.literal("mix")
+                    .executes(ctx -> executeDump(ctx.getSource(), "mix")))
+                .then(Commands.literal("all")
+                    .executes(ctx -> executeDump(ctx.getSource(), "all")))
+                .then(Commands.argument("modid", StringArgumentType.word())
+                    .executes(ctx -> executeDump(ctx.getSource(), StringArgumentType.getString(ctx, "modid"))))
             )
         );
     }
 
-    // 退出世界时兜底保存
+    private int executeDump(CommandSourceStack source, String mode) {
+        int count = TranslationCollector.scanAndExport(mode);
+        if (count > 0) {
+            source.sendSuccess(() -> Component.literal("§a[Lang Checker] 成功导出 " + count + " 条缺失翻译 (模式: " + mode + ")"), false);
+        } else if (count == 0) {
+            source.sendSuccess(() -> Component.literal("§e[Lang Checker] 未发现缺失翻译。"), false);
+        } else {
+            source.sendSuccess(() -> Component.literal("§c[Lang Checker] 导出失败，请查看日志！"), false);
+        }
+        return 1;
+    }
+
     @SubscribeEvent
     public void onWorldUnload(LevelEvent.Unload event) {
-        TranslationCollector.scanAndExport();
+        TranslationCollector.scanAndExport("mix");
     }
 }
