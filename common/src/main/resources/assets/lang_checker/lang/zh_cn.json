@@ -1,11 +1,12 @@
 {
-  "commands.lang_checker.dump.success": "§a[Lang Checker]§r 成功导出 %s 条缺失翻译。（%s 模式）",
-  "commands.lang_checker.dump.empty": "§e[Lang Checker]§r 未发现缺失翻译。",
-  "commands.lang_checker.dump.fail": "§c[Lang Checker]§r 导出失败，请查看日志！",
+  "commands.lang_checker.dump.success": "[Lang Checker] 成功导出 %s 条缺失翻译。（模式：%s）",
+  "commands.lang_checker.dump.empty": "[Lang Checker] 未发现缺失翻译。",
+  "commands.lang_checker.dump.fail": "[Lang Checker] 导出失败，请查看日志！",
   "commands.lang_checker.dump.path": "已导出到: %s",
-  "commands.lang_checker.dump.path_hover": "§a点击打开文件夹§r",
+  "commands.lang_checker.dump.path_hover": "点击打开文件夹",
   
   "commands.lang_checker.mode.mix": "混合",
   "commands.lang_checker.mode.all": "全输出",
-  "commands.lang_checker.mode.custom": "指定输出（%s）"
+  "commands.lang_checker.mode.custom": "指定输出（%s）",
+  "commands.lang_checker.suffix.sorted": "，已排序"
 }

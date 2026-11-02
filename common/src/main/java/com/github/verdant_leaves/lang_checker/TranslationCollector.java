@@ -13,13 +13,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TranslationCollector {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<String, String> capturedComponents = new ConcurrentHashMap<>();
-    
-    // 记录每个键真正的归属模组（从 lang 文件所在的 namespace 获得）
     private static final Map<String, String> keyToNamespace = new ConcurrentHashMap<>();
 
     public static void recordRawComponent(String key, String fallback) {
@@ -28,13 +27,12 @@ public class TranslationCollector {
         capturedComponents.putIfAbsent(key, value);
     }
 
-    public static int scanAndExport(String mode) {
+    public static int scanAndExport(String mode, boolean sortKeys) {
         Minecraft client = Minecraft.getInstance();
         String currentLang = client.options.languageCode;
         String fallbackLang = "en_us";
         String targetModId = "";
 
-        // 解析模式
         if (!mode.equalsIgnoreCase("mix") && !mode.equalsIgnoreCase("default") && !mode.equalsIgnoreCase("all")) {
             targetModId = mode.toLowerCase();
         }
@@ -45,66 +43,64 @@ public class TranslationCollector {
         Map<String, String> currentKeys = new HashMap<>();
         scanLanguageFiles(currentLang, currentKeys);
 
-        Map<String, String> missing = new HashMap<>();
+        Map<String, String> rawMissing = new HashMap<>();
         
-        // 1. 主动比对
         for (Map.Entry<String, String> entry : enKeys.entrySet()) {
             String key = entry.getKey();
             if (!currentKeys.containsKey(key)) {
                 String modid = keyToNamespace.getOrDefault(key, "minecraft");
                 if (targetModId.isEmpty() || modid.equalsIgnoreCase(targetModId)) {
-                    missing.put(key, entry.getValue());
+                    rawMissing.put(key, entry.getValue());
                 }
             }
         }
 
-        // 2. 被动拦截
         for (Map.Entry<String, String> entry : capturedComponents.entrySet()) {
             String key = entry.getKey();
             if (!currentKeys.containsKey(key)) {
                 String modid = keyToNamespace.getOrDefault(key, "unknown");
                 if (targetModId.isEmpty() || modid.equalsIgnoreCase(targetModId)) {
-                    missing.putIfAbsent(key, entry.getValue());
+                    rawMissing.putIfAbsent(key, entry.getValue());
                 }
             }
         }
 
-        if (missing.isEmpty()) return 0;
+        if (rawMissing.isEmpty()) return 0;
 
-        // 输出根目录: <游戏根目录>/lang_checker
+        Map<String, String> missing = sortKeys ? new TreeMap<>(rawMissing) : rawMissing;
+
         Path baseDir = client.gameDirectory.toPath().resolve("lang_checker");
         int exportedCount = 0;
 
         try {
             if (mode.equalsIgnoreCase("mix") || mode.equalsIgnoreCase("default")) {
                 Path file = baseDir.resolve(currentLang + ".json");
-                Files.createDirectories(baseDir);
-                Files.writeString(file, GSON.toJson(missing));
+                writeFile(file, missing, sortKeys);
                 exportedCount = missing.size();
             } else if (mode.equalsIgnoreCase("all")) {
-                // 按照真实的 namespace 分组
                 Map<String, Map<String, String>> grouped = new HashMap<>();
                 for (Map.Entry<String, String> entry : missing.entrySet()) {
                     String modid = keyToNamespace.getOrDefault(entry.getKey(), "unknown");
-                    grouped.computeIfAbsent(modid, k -> new HashMap<>()).put(entry.getKey(), entry.getValue());
+                    if (sortKeys) {
+                        grouped.computeIfAbsent(modid, k -> new TreeMap<>()).put(entry.getKey(), entry.getValue());
+                    } else {
+                        grouped.computeIfAbsent(modid, k -> new HashMap<>()).put(entry.getKey(), entry.getValue());
+                    }
                 }
 
                 for (Map.Entry<String, Map<String, String>> entry : grouped.entrySet()) {
                     Path file = baseDir.resolve(entry.getKey()).resolve(currentLang + ".json");
-                    Files.createDirectories(file.getParent());
-                    Files.writeString(file, GSON.toJson(entry.getValue()));
+                    writeFile(file, entry.getValue(), sortKeys);
                     exportedCount += entry.getValue().size();
                 }
             } else {
-                // 指定模组模式
                 Path file = baseDir.resolve(targetModId).resolve(currentLang + ".json");
-                Files.createDirectories(file.getParent());
-                Files.writeString(file, GSON.toJson(missing));
+                writeFile(file, missing, sortKeys);
                 exportedCount = missing.size();
             }
 
             if (exportedCount > 0) {
-                LangChecker.LOGGER.info("Exported {} missing translations (Mode: {}) to {}", exportedCount, mode, baseDir.toAbsolutePath());
+                LangChecker.LOGGER.info("Exported {} missing translations (Mode: {}, Sorted: {}) to {}", exportedCount, mode, sortKeys, baseDir.toAbsolutePath());
                 capturedComponents.clear();
             }
             return exportedCount;
@@ -115,15 +111,49 @@ public class TranslationCollector {
         }
     }
 
+    private static void writeFile(Path file, Map<String, String> map, boolean sortKeys) throws IOException {
+        Files.createDirectories(file.getParent());
+        if (sortKeys) {
+            Files.writeString(file, toJsonWithBlankLines(map));
+        } else {
+            Files.writeString(file, GSON.toJson(map));
+        }
+    }
+
+    // 自定义 JSON 序列化：按照前缀分组插入空行
+    private static String toJsonWithBlankLines(Map<String, String> map) {
+        if (map.isEmpty()) return "{}";
+        StringBuilder sb = new StringBuilder("{\n");
+        String lastPrefix = null;
+        boolean first = true;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String key = entry.getKey();
+            int dot = key.indexOf('.');
+            String prefix = dot != -1 ? key.substring(0, dot) : key;
+            
+            // 如果第一段前缀变了，插入一个空行
+            if (lastPrefix != null && !lastPrefix.equals(prefix)) {
+                sb.append("\n");
+            }
+            lastPrefix = prefix;
+            
+            if (!first) {
+                sb.append(",\n");
+            }
+            first = false;
+            
+            // 利用 GSON 保证字符串转义
+            sb.append("  ").append(GSON.toJson(key)).append(": ").append(GSON.toJson(entry.getValue()));
+        }
+        sb.append("\n}");
+        return sb.toString();
+    }
+
     private static void scanLanguageFiles(String lang, Map<String, String> outputMap) {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
-        
-        // 遍历所有资源包的 lang 目录
         resourceManager.listResourceStacks("lang", path -> path.getPath().endsWith(lang + ".json"))
             .forEach((location, resources) -> {
-                // 这里的 location.getNamespace() 就是如假包换的模组 ID！
                 String namespace = location.getNamespace();
-                
                 for (Resource resource : resources) {
                     try (InputStreamReader reader = new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
                         Map<?, ?> map = GSON.fromJson(reader, Map.class);
@@ -131,7 +161,6 @@ public class TranslationCollector {
                             for (Map.Entry<?, ?> entry : map.entrySet()) {
                                 String key = entry.getKey().toString();
                                 outputMap.putIfAbsent(key, entry.getValue().toString());
-                                // 记录该键属于哪个模组
                                 keyToNamespace.putIfAbsent(key, namespace);
                             }
                         }
