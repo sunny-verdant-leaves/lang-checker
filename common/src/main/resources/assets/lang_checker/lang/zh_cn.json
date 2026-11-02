@@ -1,0 +1,7 @@
+{
+    "commands.lang_checker.dump.success": "§a[Lang Checker] 成功导出 %s 条缺失翻译（模式：%s）。",
+    "commands.lang_checker.dump.empty": "§e[Lang Checker] 未发现缺失翻译。",
+    "commands.lang_checker.dump.fail": "§c[Lang Checker] 导出失败，请查看日志！",
+    "commands.lang_checker.dump.click": " §n[点击打开文件夹]",
+    "commands.lang_checker.dump.hover": "点击打开输出目录"
+}

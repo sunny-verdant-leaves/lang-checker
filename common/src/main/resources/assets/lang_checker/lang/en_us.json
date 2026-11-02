@@ -1,0 +1,7 @@
+{
+    "commands.lang_checker.dump.success": "§a[Lang Checker] Successfully exported %s missing translations (Mode: %s).",
+    "commands.lang_checker.dump.empty": "§e[Lang Checker] No missing translations found.",
+    "commands.lang_checker.dump.fail": "§c[Lang Checker] Export failed, check logs.",
+    "commands.lang_checker.dump.click": " §n[Click to open folder]",
+    "commands.lang_checker.dump.hover": "Open the output directory"
+}

@@ -8,7 +8,10 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 
 public class LangCheckerFabricClient implements ClientModInitializer {
     @Override
@@ -36,11 +39,20 @@ public class LangCheckerFabricClient implements ClientModInitializer {
     private int executeDump(FabricClientCommandSource source, String mode) {
         int count = TranslationCollector.scanAndExport(mode);
         if (count > 0) {
-            source.sendFeedback(Component.literal("§a[Lang Checker] 成功导出 " + count + " 条缺失翻译 (模式: " + mode + ")"));
+            source.sendFeedback(Component.translatable("commands.lang_checker.dump.success", count, mode));
+            // 生成可点击打开的目录链接
+            String path = source.getClient().gameDirectory.toPath().resolve("lang_checker").toAbsolutePath().toString();
+            Component clickText = Component.translatable("commands.lang_checker.dump.click")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.GREEN)
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, path))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("commands.lang_checker.dump.hover")))
+                );
+            source.sendFeedback(clickText);
         } else if (count == 0) {
-            source.sendFeedback(Component.literal("§e[Lang Checker] 未发现缺失翻译。"));
+            source.sendFeedback(Component.translatable("commands.lang_checker.dump.empty"));
         } else {
-            source.sendFeedback(Component.literal("§c[Lang Checker] 导出失败，请查看日志！"));
+            source.sendFeedback(Component.translatable("commands.lang_checker.dump.fail"));
         }
         return 1;
     }
