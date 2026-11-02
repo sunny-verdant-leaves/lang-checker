@@ -6,6 +6,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -16,6 +17,7 @@ public class LangCheckerForge {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+    // 命令注册
     @SubscribeEvent
     public void onRegisterCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("langchecker")
@@ -23,15 +25,21 @@ public class LangCheckerForge {
                 .executes(context -> {
                     int count = TranslationCollector.scanAndExport();
                     if (count > 0) {
-                        context.getSource().sendSuccess(() -> Component.literal("§a[Lang Checker] 扫描完成！共发现 " + count + " 条缺失翻译。"), false);
+                        context.getSource().sendSuccess(() -> Component.literal("§a[Lang Checker] 导出成功！共捕获 " + count + " 条缺失翻译。"), false);
                     } else if (count == 0) {
-                        context.getSource().sendSuccess(() -> Component.literal("§e[Lang Checker] 扫描完成：当前语言没有缺失翻译，或缺少英文基准。"), false);
+                        context.getSource().sendSuccess(() -> Component.literal("§e[Lang Checker] 当前语言没有缺失翻译。"), false);
                     } else {
-                        context.getSource().sendSuccess(() -> Component.literal("§c[Lang Checker] 扫描或写入时发生错误！"), false);
+                        context.getSource().sendSuccess(() -> Component.literal("§c[Lang Checker] 导出失败，请查看日志！"), false);
                     }
                     return 1;
                 })
             )
         );
+    }
+
+    // 退出世界时兜底保存
+    @SubscribeEvent
+    public void onWorldUnload(LevelEvent.Unload event) {
+        TranslationCollector.scanAndExport();
     }
 }
